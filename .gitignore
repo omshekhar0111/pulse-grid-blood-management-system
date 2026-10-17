@@ -1,0 +1,12 @@
+
+node_modules/
+client/node_modules/
+server/node_modules/
+client/dist/
+legacy_static_backup/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+.DS_Store

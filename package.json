@@ -1,0 +1,15 @@
+{
+  "name": "pulsegrid-root",
+  "version": "1.0.0",
+  "description": "PULSE GRID — Blood Management System (BCC-351)",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "npm --prefix client run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}
