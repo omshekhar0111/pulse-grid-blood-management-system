@@ -40,6 +40,17 @@ async function seedDatabase() {
       ['fortis@bloodbank.org', defaultPassword, 'hospital', 'active']
     );
 
+    // Requester user (Dedicated role for patient / blood requesters)
+    const reqUser = await query(
+      'INSERT INTO users (email, password_hash, role, status) VALUES (?, ?, ?, ?)',
+      ['requester@pulsegrid.org', defaultPassword, 'requester', 'active']
+    );
+    await query(
+      `INSERT INTO requesters (user_id, full_name, phone, city, state, address, emergency_contact)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [reqUser.insertId, 'Aditi Rao', '+91 98999 55555', 'New Delhi', 'Delhi', 'A-14 Hauz Khas Enclave', '+91 98999 55556']
+    );
+
     // Donor users
     const donorsData = [
       { email: 'rahul.sharma@donor.org', name: 'Rahul Sharma', blood: 'A+', phone: '+91 98111 23456', gender: 'Male', age: 28, weight: 68.5, city: 'New Delhi', state: 'Delhi', address: 'B-42 Connaught Place', available: 1, lastDonation: '2026-08-15', total: 4 },
@@ -143,7 +154,7 @@ async function seedDatabase() {
     const requests = [
       {
         code: 'PG-REQ-84910',
-        userId: donorUserIds[0].userId,
+        userId: reqUser.insertId,
         patient: 'Kavita Sundaram',
         age: 38,
         gender: 'Female',
@@ -166,7 +177,7 @@ async function seedDatabase() {
       },
       {
         code: 'PG-REQ-84911',
-        userId: donorUserIds[1].userId,
+        userId: reqUser.insertId,
         patient: 'Harpreet Singh',
         age: 45,
         gender: 'Male',
@@ -283,7 +294,76 @@ async function seedDatabase() {
       );
     }
 
-    // 7. Insert Audit Logs
+    // 7. Insert Initial Inventory Transactions (Ledger)
+    const initialTransactions = [
+      { invId: 1, fId: facilityIds[0], type: 'IN', units: 14, prev: 0, newU: 14, reason: 'Voluntary blood drive donation intake', staff: h1User.insertId },
+      { invId: 4, fId: facilityIds[0], type: 'IN', units: 18, prev: 0, newU: 18, reason: 'Voluntary blood drive donation intake', staff: h1User.insertId },
+      { invId: 7, fId: facilityIds[1], type: 'IN', units: 24, prev: 0, newU: 24, reason: 'Red Cross community blood camp', staff: h2User.insertId },
+      { invId: 10, fId: facilityIds[1], type: 'IN', units: 16, prev: 0, newU: 16, reason: 'Scheduled donor collection', staff: h2User.insertId },
+      { invId: 17, fId: facilityIds[3], type: 'OUT', units: 2, prev: 17, newU: 15, reason: 'Dispatched for Request PG-REQ-84913 (Suresh Kumar)', staff: h4User.insertId },
+    ];
+
+    for (const trx of initialTransactions) {
+      await query(
+        `INSERT INTO inventory_transactions (inventory_id, facility_id, transaction_type, units, previous_units, new_units, reason, performed_by_user_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [trx.invId, trx.fId, trx.type, trx.units, trx.prev, trx.newU, trx.reason, trx.staff]
+      );
+    }
+
+    // 8. Insert In-App Notifications
+    const initialNotifications = [
+      {
+        userId: reqUser.insertId,
+        role: 'requester',
+        title: 'Blood Requirement Under Review',
+        message: 'Your emergency blood requirement PG-REQ-84911 for Harpreet Singh is under active review by Max Super Speciality Hospital.',
+        type: 'info',
+        link: '/requester-dashboard'
+      },
+      {
+        userId: h1User.insertId,
+        role: 'hospital',
+        title: 'Low Stock Alert: O- PRBC',
+        message: 'Inventory alert: Batch APL-PRBC-2610-05 (O- Packed Red Blood Cells) is down to 2 units.',
+        type: 'warning',
+        link: '/hospital-dashboard'
+      },
+      {
+        userId: h1User.insertId,
+        role: 'hospital',
+        title: 'Platelet Shelf-Life Advisory',
+        message: 'Batch APL-PLT-2610-03 (B+ Platelets) has 5 days remaining before expiration.',
+        type: 'warning',
+        link: '/hospital-dashboard'
+      },
+      {
+        userId: donorUserIds[1].userId,
+        role: 'donor',
+        title: 'Urgent Request Matching O+ in Delhi',
+        message: 'There is a high-priority request for O+ blood units near your area.',
+        type: 'alert',
+        link: '/donor-dashboard'
+      },
+      {
+        userId: adminUser.insertId,
+        role: 'admin',
+        title: 'System Security & RLS Active',
+        message: 'All 8 relational tables protected by Row Level Security policies and role validation.',
+        type: 'success',
+        link: '/admin'
+      }
+    ];
+
+    for (const n of initialNotifications) {
+      await query(
+        `INSERT INTO notifications (user_id, target_role, title, message, type, link, is_read)
+         VALUES (?, ?, ?, ?, ?, ?, 0)`,
+        [n.userId, n.role, n.title, n.message, n.type, n.link]
+      );
+    }
+
+    // 9. Insert Audit Logs
     const auditEvents = [
       { uId: adminUser.insertId, action: 'SYSTEM_INITIALIZED', entity: 'system', entityId: 1, details: 'Pulse Grid central blood management platform initialized' },
       { uId: h1User.insertId, action: 'FACILITY_VERIFIED', entity: 'facility', entityId: facilityIds[0], details: 'Apollo Blood Bank licensed and verified' },

@@ -14,7 +14,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email, password, and role are required.' });
     }
 
-    if (!['donor', 'hospital'].includes(role)) {
+    if (!['donor', 'requester', 'hospital'].includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role specified for public registration.' });
     }
 
@@ -61,6 +61,25 @@ router.post('/register', async (req, res) => {
             isAvailable !== false ? 1 : 0,
             lastDonationDate || null,
             0
+          ]
+        );
+      } else if (role === 'requester') {
+        const { fullName, phone, city, state, address, emergencyContact } = profileData;
+        if (!fullName || !phone || !city) {
+          throw new Error('Full name, contact phone, and city are required for requester registration.');
+        }
+
+        await trxQuery(
+          `INSERT INTO requesters (user_id, full_name, phone, city, state, address, emergency_contact)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId,
+            fullName,
+            phone,
+            city,
+            state || 'Delhi',
+            address || '',
+            emergencyContact || ''
           ]
         );
       } else if (role === 'hospital') {
@@ -155,6 +174,9 @@ router.post('/login', async (req, res) => {
     if (user.role === 'donor') {
       const donors = await query('SELECT * FROM donors WHERE user_id = ?', [user.id]);
       profile = donors[0] || null;
+    } else if (user.role === 'requester') {
+      const requesters = await query('SELECT * FROM requesters WHERE user_id = ?', [user.id]);
+      profile = requesters[0] || null;
     } else if (user.role === 'hospital') {
       const facilities = await query('SELECT * FROM facilities WHERE user_id = ?', [user.id]);
       profile = facilities[0] || null;
@@ -190,6 +212,7 @@ router.post('/demo-login', async (req, res) => {
     const { role } = req.body; // 'admin', 'hospital', 'donor'
     let targetEmail = 'admin@pulsegrid.org';
     if (role === 'hospital') targetEmail = 'apollo@hospital.org';
+    if (role === 'requester') targetEmail = 'requester@pulsegrid.org';
     if (role === 'donor') targetEmail = 'priya.verma@donor.org';
 
     const users = await query('SELECT * FROM users WHERE email = ?', [targetEmail]);
@@ -202,6 +225,9 @@ router.post('/demo-login', async (req, res) => {
     if (user.role === 'donor') {
       const donors = await query('SELECT * FROM donors WHERE user_id = ?', [user.id]);
       profile = donors[0] || null;
+    } else if (user.role === 'requester') {
+      const requesters = await query('SELECT * FROM requesters WHERE user_id = ?', [user.id]);
+      profile = requesters[0] || null;
     } else if (user.role === 'hospital') {
       const facilities = await query('SELECT * FROM facilities WHERE user_id = ?', [user.id]);
       profile = facilities[0] || null;
@@ -243,6 +269,9 @@ router.get('/me', authenticateToken, async (req, res) => {
     if (user.role === 'donor') {
       const donors = await query('SELECT * FROM donors WHERE user_id = ?', [user.id]);
       profile = donors[0] || null;
+    } else if (user.role === 'requester') {
+      const requesters = await query('SELECT * FROM requesters WHERE user_id = ?', [user.id]);
+      profile = requesters[0] || null;
     } else if (user.role === 'hospital') {
       const facilities = await query('SELECT * FROM facilities WHERE user_id = ?', [user.id]);
       profile = facilities[0] || null;

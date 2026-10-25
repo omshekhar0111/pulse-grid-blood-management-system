@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import StatCard from '../components/StatCard';
-import GoogleMapComponent from '../components/GoogleMapComponent';
+import LeafletMapComponent from '../components/LeafletMapComponent';
 import BloodCompatibilityModal from '../components/BloodCompatibilityModal';
 import { 
   Droplet, 
@@ -16,10 +16,15 @@ import {
   AlertTriangle, 
   Search, 
   MapPin, 
-  FileText,
-  UserCheck,
-  ChevronRight,
-  Phone
+  FileText, 
+  UserCheck, 
+  ChevronRight, 
+  Phone,
+  HelpCircle,
+  Users,
+  Award,
+  Sparkles,
+  ChevronDown
 } from 'lucide-react';
 import { BLOOD_GROUPS } from '../utils/bloodData';
 
@@ -34,6 +39,7 @@ export default function Home() {
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -58,12 +64,34 @@ export default function Home() {
     fetchData();
   }, []);
 
+  const faqs = [
+    {
+      q: "Who is eligible to donate blood through Pulse Grid?",
+      a: "Healthy individuals aged 18 to 65 with a body weight of at least 45 kg and hemoglobin level > 12.5 g/dL. Male donors can donate whole blood every 90 days, and female donors every 120 days. Final physical and laboratory screening is always conducted by medical officers at the blood bank."
+    },
+    {
+      q: "How does Pulse Grid prevent double fulfillment and negative inventory?",
+      a: "All stock deductions occur atomically within relational database transactions. The system locks target inventory batches, verifies expiration dates, ensures available units >= required units, updates the stock, and logs an immutable audit transaction simultaneously."
+    },
+    {
+      q: "Is donor personal contact information publicly exposed?",
+      a: "No. In accordance with healthcare data protection principles, phone numbers, exact residential street addresses, and medical details are restricted. Public users can view blood group and city availability; only verified medical staff and administrators can contact donors."
+    },
+    {
+      q: "Can patient requesters track requirement status in real time?",
+      a: "Yes. Every request receives a unique tracking code (e.g., PG-REQ-84910). Requesters can log into their dedicated Requester Dashboard to view the live stepper timeline from Pending to Under Review, Approved, and Fulfilled."
+    },
+    {
+      q: "Does an ABO/Rh blood group match guarantee clinical compatibility?",
+      a: "No. While ABO and Rh grouping indicates theoretical compatibility, clinical crossmatching and antibody screening by qualified blood-bank laboratory professionals are mandatory before any transfusion."
+    }
+  ];
+
   return (
     <div className="space-y-16 pb-16">
       
       {/* 1. HERO SECTION */}
       <section className="relative overflow-hidden bg-white border-b border-slate-200">
-        {/* Subtle grid pattern background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-70"></div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 relative z-10">
@@ -71,127 +99,104 @@ export default function Home() {
             
             {/* Left Column: Heading and CTAs */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-medical-700 text-xs font-semibold">
-                <span className="flex h-2 w-2 rounded-full bg-medical-600 animate-pulse"></span>
-                <span>Centralized Healthcare Blood Dispatch System</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-red-700 text-xs font-semibold">
+                <span className="flex h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+                <span>Centralized Healthcare Blood Management & Dispatch Network</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-navy-900 tracking-tight leading-[1.15]">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
                 Every Drop Counts. <br />
-                <span className="text-medical-600">Every Second Matters.</span>
+                <span className="text-red-600">Every Second Matters.</span>
               </h1>
 
               <p className="text-base sm:text-lg text-slate-600 max-w-2xl leading-relaxed">
-                Pulse Grid seamlessly connects voluntary blood donors, accredited hospital blood banks, and critical emergency trauma care centers in real-time — eliminating shortages and expediting life-saving transfusions.
+                Pulse Grid connects voluntary blood donors, accredited hospital blood banks, and patient requesters in real-time — eliminating shortages, preventing duplicate issuance, and accelerating life-saving transfusions.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
                 <Link
                   to="/find-blood"
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-medical-600 hover:bg-medical-700 text-white font-bold text-sm shadow-md shadow-medical-600/25 transition flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-600/25 transition flex items-center justify-center gap-2"
                 >
                   <Search className="w-4 h-4" />
-                  <span>Find Blood Now</span>
+                  <span>Find Blood Availability</span>
                 </Link>
                 <Link
                   to="/register?role=donor"
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-navy-900 font-bold text-sm border border-slate-300 shadow-sm transition flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-bold text-sm border border-slate-300 shadow-sm transition flex items-center justify-center gap-2"
                 >
-                  <Heart className="w-4 h-4 text-medical-600" />
+                  <Heart className="w-4 h-4 text-red-600" />
                   <span>Become a Donor</span>
+                </Link>
+                <Link
+                  to="/request-blood"
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-red-700 font-bold text-sm border border-rose-200 transition flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                  <span>Emergency Request</span>
                 </Link>
               </div>
 
-              {/* Trust Badges */}
-              <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs text-slate-500 font-medium">
-                <div className="flex items-center gap-1.5">
+              {/* Verified Trust Badges */}
+              <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs text-slate-500 font-medium">
+                <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>100% Verified Blood Banks</span>
+                  <span>Licensed Blood Banks</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-medical-600" />
-                  <span>Live Cold-Chain Tracking</span>
-                </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-blue-600" />
-                  <span>Emergency Automated Matching</span>
+                  <span>Atomic Stock Deductions</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                  <span>Cold-Chain 2-6°C Monitored</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Realistic Healthcare Interactive Visual */}
+            {/* Right Column: Interactive KPI Snapshot */}
             <div className="lg:col-span-5">
-              <div className="relative mx-auto max-w-md lg:max-w-none">
-                
-                {/* Visual Medical Card */}
-                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xl p-6 relative">
-                  
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-medical-600 text-white flex items-center justify-center font-bold">
-                        <Activity className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-sm text-navy-900">National Blood Grid Monitor</h4>
-                        <p className="text-[11px] text-slate-400">Live Telemetry & Emergency Sync</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                      ONLINE
-                    </span>
+              <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Droplet className="w-5 h-5 text-red-600 fill-red-600" />
+                    <span className="font-extrabold text-sm text-slate-900">Live Network Telemetry</span>
                   </div>
-
-                  {/* Real-time Inventory Snapshot */}
-                  <div className="mt-5 space-y-3">
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Regional Blood Stock Level
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {['A+', 'B+', 'O+', 'AB+'].map((group) => (
-                        <div key={group} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                          <span className="text-xs font-black text-navy-900">{group}</span>
-                          <div className="text-[10px] font-bold text-medical-600 mt-0.5">
-                            {stats.bloodGroupAvailability[group]?.units || 24} units
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Active Urgent Dispatch Card */}
-                  <div className="mt-5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl">
-                    <div className="flex items-center justify-between text-xs font-bold text-rose-900">
-                      <span className="flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-medical-600" />
-                        Active Emergency Dispatch
-                      </span>
-                      <span className="text-[10px] bg-medical-600 text-white px-2 py-0.5 rounded-full uppercase">Critical</span>
-                    </div>
-                    <p className="text-xs text-rose-800 mt-1">
-                      O-Negative PRBC requested for Trauma OT at Apollo Hospital. 2 matching donors notified within 3.2 km radius.
-                    </p>
-                    <div className="mt-2 flex items-center justify-between text-[11px] text-rose-700 pt-2 border-t border-rose-200/60 font-semibold">
-                      <span>Response time: &lt; 8 mins</span>
-                      <Link to="/request-blood" className="text-medical-700 hover:underline">View Dispatch →</Link>
-                    </div>
-                  </div>
-
-                  {/* Quick Action Button */}
-                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <button
-                      onClick={() => setModalOpen(true)}
-                      className="font-semibold text-medical-600 hover:text-medical-700 flex items-center gap-1"
-                    >
-                      <span>Transfusion Compatibility Guide</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-[11px] font-mono">BCC-351</span>
-                  </div>
-
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>Database Synced</span>
+                  </span>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Total Blood Units</span>
+                    <span className="text-3xl font-black text-slate-900 mt-1 block">{stats.totalBloodUnits || 120}</span>
+                    <span className="text-[10px] text-emerald-600 font-semibold">Available Across 4 Centers</span>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Voluntary Donors</span>
+                    <span className="text-3xl font-black text-slate-900 mt-1 block">{stats.totalDonors || 8}</span>
+                    <span className="text-[10px] text-blue-600 font-semibold">Verified & Active</span>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Accredited Banks</span>
+                    <span className="text-3xl font-black text-slate-900 mt-1 block">{stats.partnerFacilities || 4}</span>
+                    <span className="text-[10px] text-slate-500 font-semibold">Delhi NCR Corridor</span>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Cases Fulfilled</span>
+                    <span className="text-3xl font-black text-slate-900 mt-1 block">{stats.requestsFulfilled || 2}</span>
+                    <span className="text-[10px] text-red-600 font-semibold">Zero Double-Issuance</span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-red-50/70 border border-red-200 rounded-2xl text-xs text-red-900 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <p className="leading-snug">
+                    <span className="font-bold">Clinical Safety Rule:</span> Final compatibility, crossmatch testing, and issue decisions are handled by certified blood bank professionals.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -199,59 +204,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. REAL DATABASE STATISTICS CARDS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Registered Donors"
-            value={stats.totalDonors}
-            label="Verified voluntary donors ready to respond"
-            icon={Heart}
-            color="medical"
-          />
-          <StatCard
-            title="Blood Units in Stock"
-            value={stats.totalBloodUnits}
-            label="Tested & cold-chain verified units available"
-            icon={Droplet}
-            color="emerald"
-          />
-          <StatCard
-            title="Partner Blood Banks"
-            value={stats.partnerFacilities}
-            label="Licensed hospitals and regional blood centers"
-            icon={Building2}
-            color="navy"
-          />
-          <StatCard
-            title="Requests Fulfilled"
-            value={stats.requestsFulfilled}
-            label="Life-saving emergency deliveries completed"
-            icon={CheckCircle2}
-            color="blue"
-          />
-        </div>
-      </section>
-
-      {/* 3. BLOOD GROUP AVAILABILITY CARDS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-8">
+      {/* 2. BLOOD GROUP AVAILABILITY OVERVIEW */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-medical-600 uppercase tracking-wider mb-1">
-              <Droplet className="w-3.5 h-3.5 fill-medical-600" />
-              <span>Real-Time Inventory State</span>
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 uppercase tracking-wider mb-1">
+              <Droplet className="w-3.5 h-3.5 fill-red-600" />
+              <span>Real-Time Relational Inventory</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-navy-900">
-              Blood Group Live Availability
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Blood Group Availability Overview
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Aggregated stock across all verified hospital blood centers in the network.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Live stock counts stored in database batches across verified regional hospitals
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setModalOpen(true)}
-              className="text-xs font-bold text-medical-600 bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl hover:bg-rose-100 transition"
+              className="text-xs font-bold text-red-600 bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl hover:bg-rose-100 transition"
             >
               Compatibility Matrix
             </button>
@@ -259,7 +230,7 @@ export default function Home() {
               to="/find-blood"
               className="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl hover:bg-slate-200 transition"
             >
-              Detailed Search →
+              Search Units →
             </Link>
           </div>
         </div>
@@ -274,14 +245,14 @@ export default function Home() {
             return (
               <div
                 key={group}
-                className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-medical-500 hover:shadow-md transition text-center group"
+                className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-red-500 hover:shadow-md transition text-center group"
               >
                 <div className="w-12 h-12 mx-auto rounded-xl bg-slate-50 group-hover:bg-rose-50 flex items-center justify-center transition mb-2">
-                  <span className="text-xl font-black text-navy-900 group-hover:text-medical-600 transition">
+                  <span className="text-xl font-black text-slate-900 group-hover:text-red-600 transition">
                     {group}
                   </span>
                 </div>
-                <div className="text-2xl font-black text-navy-900 tracking-tight">
+                <div className="text-2xl font-black text-slate-900 tracking-tight">
                   {groupData.units}
                   <span className="text-xs font-semibold text-slate-400 ml-1">units</span>
                 </div>
@@ -304,129 +275,219 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. HOW PULSE GRID WORKS */}
+      {/* 3. HOW PULSE GRID WORKS */}
       <section className="bg-white py-16 border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-14">
-            <span className="text-xs font-bold text-medical-600 uppercase tracking-widest">
-              Emergency Workflow
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">
+              Standard Operating Procedure
             </span>
-            <h2 className="text-3xl font-extrabold text-navy-900 mt-2">
-              How Pulse Grid Connects The Care Ecosystem
+            <h2 className="text-3xl font-extrabold text-slate-900 mt-2">
+              How Pulse Grid Works
             </h2>
             <p className="text-slate-600 text-sm mt-3">
-              Designed to eliminate delays between patient blood requests, verified inventory allocation, and voluntary donor dispatch.
+              Automating communication between patients, certified blood banks, and voluntary donors to eliminate emergency turnaround time.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-            
-            {/* Step 1 */}
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative">
-              <div className="w-10 h-10 rounded-xl bg-medical-600 text-white flex items-center justify-center font-bold text-sm mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm">
                 01
               </div>
-              <h3 className="font-bold text-navy-900 text-base mb-2">Donor Registration & Vetting</h3>
+              <h3 className="font-bold text-slate-900 text-base">Donor Registration & Cooldown</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Donors enroll with blood group, geographic location, and medical donation intervals. Automated eligibility checks track 90-day cooldown periods.
+                Donors register with blood group and availability status. Pulse Grid tracks mandatory 90-day cooldown periods between whole blood donations.
               </p>
             </div>
 
-            {/* Step 2 */}
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative">
-              <div className="w-10 h-10 rounded-xl bg-navy-900 text-white flex items-center justify-center font-bold text-sm mb-4">
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
                 02
               </div>
-              <h3 className="font-bold text-navy-900 text-base mb-2">Real-Time Inventory Sync</h3>
+              <h3 className="font-bold text-slate-900 text-base">Hospital Inventory Tracking</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Hospital blood banks maintain verified stock by blood group and component type (Whole Blood, PRBC, Platelets, FFP) with expiry alerts.
+                Hospital staff log cold-chain component batches (Whole Blood, PRBC, Platelets, FFP) with expiry alerts and batch barcodes.
               </p>
             </div>
 
-            {/* Step 3 */}
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative">
-              <div className="w-10 h-10 rounded-xl bg-medical-600 text-white flex items-center justify-center font-bold text-sm mb-4">
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm">
                 03
               </div>
-              <h3 className="font-bold text-navy-900 text-base mb-2">Automated Emergency Matching</h3>
+              <h3 className="font-bold text-slate-900 text-base">Emergency Blood Requests</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                When a hospital submits a blood requirement, our geospatial engine maps nearest blood centers and sends prioritized alerts to matching donors.
+                Patients or doctors submit requirement requests with priority, diagnosis, and required date. Nearby centers and matching donors receive instant alerts.
               </p>
             </div>
 
-            {/* Step 4 */}
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm mb-4">
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">
                 04
               </div>
-              <h3 className="font-bold text-navy-900 text-base mb-2">Atomic Reservation & Delivery</h3>
+              <h3 className="font-bold text-slate-900 text-base">Atomic Issue & Transaction Log</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Allocated units are verified via batch barcode, reserved atomically in the database to prevent duplicate issues, and dispatched for transfusion.
+                Authorized staff review, approve, and issue blood with atomic stock deduction, guaranteeing no overselling and logging an immutable audit transaction.
               </p>
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* 5. EMERGENCY BLOOD REQUEST CALLOUT */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-br from-medical-600 via-rose-600 to-rose-700 rounded-3xl p-8 sm:p-12 text-white shadow-xl shadow-medical-600/20 relative overflow-hidden">
-          <div className="max-w-2xl space-y-4 relative z-10">
-            <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-wider">
-              Emergency Transfusion Support
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
-              In Need of Urgent Blood for Surgery or Critical Care?
-            </h2>
-            <p className="text-rose-100 text-sm sm:text-base leading-relaxed">
-              Submit your patient requirements immediately. Our system flags critical emergencies to nearby licensed blood banks and matching voluntary donors in seconds.
-            </p>
-            <div className="pt-2 flex flex-wrap items-center gap-4">
-              <Link
-                to="/request-blood"
-                className="px-6 py-3 rounded-xl bg-white text-medical-700 font-bold text-sm hover:bg-slate-100 shadow-md transition flex items-center gap-2"
-              >
-                <span>Submit Emergency Request</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <a
-                href="tel:1066"
-                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 transition flex items-center gap-2"
-              >
-                <Phone className="w-4 h-4" />
-                <span>Call Hotline 1066</span>
-              </a>
+      {/* 4. BENEFITS FOR DONORS, HOSPITALS, AND REQUESTERS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="text-center max-w-2xl mx-auto">
+          <span className="text-xs font-bold text-red-600 uppercase tracking-widest">
+            Stakeholder Value
+          </span>
+          <h2 className="text-3xl font-extrabold text-slate-900 mt-2">
+            Tailored Benefits Across the Healthcare Grid
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Donors Card */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-4 hover:border-red-500 transition">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-red-600 flex items-center justify-center">
+              <Heart className="w-6 h-6 fill-red-600" />
             </div>
+            <h3 className="font-bold text-lg text-slate-900">For Voluntary Donors</h3>
+            <ul className="space-y-2.5 text-xs text-slate-600">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>Instant notifications when your blood type is required in critical emergency cases.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>Automatic 90-day cooldown counter to safeguard your health and recovery.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>Verified donation certificates and permanent digital contribution history.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>Strict privacy controls: personal phone and address are protected.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Hospitals Card */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-4 hover:border-blue-500 transition">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg text-slate-900">For Hospitals & Blood Banks</h3>
+            <ul className="space-y-2.5 text-xs text-slate-600">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <span>Batch barcode tracking across Whole Blood, PRBC, Platelets, and FFP components.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <span>Atomic database issue transactions preventing double allocation and negative stock.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <span>Automated alerts for near-expiry units and stock falling below critical thresholds.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <span>Complete audit trail logging every intake, adjustment, and dispatch event.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Requesters Card */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-4 hover:border-amber-500 transition">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Users className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg text-slate-900">For Patients & Requesters</h3>
+            <ul className="space-y-2.5 text-xs text-slate-600">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>Single portal to locate rare blood groups across accredited institutions.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>Live timeline tracking of requirement status from Pending to Dispatched.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>Direct hospital contact and Leaflet map routing for rapid collection.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>Transparent triage notes explaining reserve status or crossmatch progress.</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* 6. NEARBY BLOOD BANKS & HOSPITALS MAP PREVIEW */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-6">
+      {/* 5. NEARBY BLOOD BANKS & HOSPITALS MAP */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
           <div>
-            <span className="text-xs font-bold text-medical-600 uppercase tracking-wider">
-              Interactive Google Maps
+            <span className="text-xs font-bold text-red-600 uppercase tracking-wider">
+              Geospatial OpenStreetMap Grid
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-navy-900 mt-1">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
               Find Nearby Blood Banks & Hospitals
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Real-time map showing verified medical centers with available inventory, contact details, and directions.
+              Locate accredited blood centers, view available component inventory, and get turn-by-turn routing with GPS consent.
             </p>
           </div>
           <Link
             to="/blood-banks"
-            className="text-xs font-bold text-medical-600 hover:text-medical-700 flex items-center gap-1"
+            className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1"
           >
-            <span>Open Fullscreen Map View</span>
+            <span>Open Dedicated Map View</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Map Preview */}
-        <GoogleMapComponent facilities={facilities} />
+        {/* Leaflet OpenStreetMap Component */}
+        <LeafletMapComponent facilities={facilities} />
+      </section>
+
+      {/* 6. FREQUENTLY ASKED QUESTIONS */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="text-center">
+          <span className="text-xs font-bold text-red-600 uppercase tracking-widest">
+            Clinical & Platform Guidance
+          </span>
+          <h2 className="text-3xl font-extrabold text-slate-900 mt-2">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-sm text-slate-500 mt-2">
+            Essential facts about donor eligibility, inventory safety, and crossmatch guidelines.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {faqs.map((faq, idx) => (
+            <div
+              key={idx}
+              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition"
+            >
+              <button
+                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                className="w-full text-left p-5 text-sm font-bold text-slate-900 flex items-center justify-between gap-4 hover:bg-slate-50/70"
+              >
+                <span>{faq.q}</span>
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openFaq === idx ? 'rotate-180 text-red-600' : ''}`} />
+              </button>
+              {openFaq === idx && (
+                <div className="px-5 pb-5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
+                  {faq.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Blood Compatibility Guide Modal */}

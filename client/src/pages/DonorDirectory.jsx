@@ -245,7 +245,7 @@ export default function DonorDirectory() {
                       </span>
                     </div>
 
-                    {/* Location & Details */}
+                    {/* Location & Details with Privacy Protection */}
                     <div className="py-3 space-y-2 text-xs text-slate-600">
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -254,12 +254,22 @@ export default function DonorDirectory() {
                       
                       <div className="flex items-center gap-1.5">
                         <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="font-mono text-slate-700">{donor.phone}</span>
+                        {isStaff ? (
+                          <span className="font-mono font-bold text-slate-800">{donor.phone}</span>
+                        ) : (
+                          <span className="font-mono text-slate-400 italic">
+                            {donor.phone ? donor.phone.slice(0, 6) + '••••' : '••••••••••'} (Staff Protected)
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-1.5">
                         <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="text-slate-500 truncate">{donor.email}</span>
+                        {isStaff ? (
+                          <span className="text-slate-600 truncate">{donor.email}</span>
+                        ) : (
+                          <span className="text-slate-400 italic">Protected by Donor Privacy Consent</span>
+                        )}
                       </div>
                     </div>
 

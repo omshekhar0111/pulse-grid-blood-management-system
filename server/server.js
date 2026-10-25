@@ -35,6 +35,7 @@ app.use('/api/donors', require('./routes/donors'));
 app.use('/api/facilities', require('./routes/facilities'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/contact', require('./routes/contact'));
 
 // Global 404 Handler for API

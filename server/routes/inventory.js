@@ -146,12 +146,17 @@ router.post('/', authenticateToken, requireRole(['hospital', 'admin']), async (r
       storage_temp
     } = req.body;
 
-    if (!blood_group || !units || !collection_date || !expiry_date) {
+    if (!blood_group || units === undefined || !collection_date || !expiry_date) {
       return res.status(400).json({ success: false, message: 'Blood group, units, collection date, and expiry date are required.' });
     }
 
+    const numUnits = parseInt(units);
+    if (isNaN(numUnits) || numUnits < 0) {
+      return res.status(400).json({ success: false, message: 'Blood inventory units must be a non-negative number.' });
+    }
+
     const genBatch = batch_number || `BATCH-${Date.now().toString().slice(-6)}`;
-    const calcStatus = calculateInventoryStatus(parseInt(units), expiry_date);
+    const calcStatus = calculateInventoryStatus(numUnits, expiry_date);
 
     const result = await query(
       `INSERT INTO blood_inventory 
@@ -161,7 +166,7 @@ router.post('/', authenticateToken, requireRole(['hospital', 'admin']), async (r
         facilityId,
         blood_group,
         component_type || 'Whole Blood',
-        parseInt(units),
+        numUnits,
         collection_date,
         expiry_date,
         genBatch,
@@ -169,6 +174,23 @@ router.post('/', authenticateToken, requireRole(['hospital', 'admin']), async (r
         calcStatus
       ]
     );
+
+    // Record Inventory Transaction (IN)
+    await query(
+      `INSERT INTO inventory_transactions 
+        (inventory_id, facility_id, transaction_type, units, previous_units, new_units, reason, performed_by_user_id)
+       VALUES (?, ?, 'IN', ?, 0, ?, 'New inventory batch intake', ?)`,
+      [result.insertId, facilityId, numUnits, numUnits, req.user.id]
+    );
+
+    // If initial units are low or expiring soon, create proactive notification
+    if (numUnits <= 5) {
+      await query(
+        `INSERT INTO notifications (user_id, target_role, title, message, type, link)
+         VALUES (?, 'hospital', 'Low Stock Alert', ?, 'warning', '/hospital-dashboard')`,
+        [req.user.id, `Batch ${genBatch} (${blood_group} ${component_type || 'Whole Blood'}) added with only ${numUnits} units.`]
+      );
+    }
 
     // Audit Log
     await query(
@@ -209,6 +231,9 @@ router.put('/:id', authenticateToken, requireRole(['hospital', 'admin']), async 
     }
 
     const newUnits = units !== undefined ? parseInt(units) : batch.units;
+    if (isNaN(newUnits) || newUnits < 0) {
+      return res.status(400).json({ success: false, message: 'Units must be non-negative.' });
+    }
     const newExp = expiry_date || batch.expiry_date;
     const newTemp = storage_temp || batch.storage_temp;
     const newStatus = status_override || calculateInventoryStatus(newUnits, newExp);
@@ -219,6 +244,17 @@ router.put('/:id', authenticateToken, requireRole(['hospital', 'admin']), async 
        WHERE id = ?`,
       [newUnits, newExp, newTemp, newStatus, id]
     );
+
+    // Record Transaction if units changed
+    if (newUnits !== batch.units) {
+      const diff = newUnits - batch.units;
+      await query(
+        `INSERT INTO inventory_transactions 
+          (inventory_id, facility_id, transaction_type, units, previous_units, new_units, reason, performed_by_user_id)
+         VALUES (?, ?, 'ADJUSTMENT', ?, ?, ?, 'Stock quantity updated by staff', ?)`,
+        [id, batch.facility_id, Math.abs(diff), batch.units, newUnits, req.user.id]
+      );
+    }
 
     await query(
       'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)',
@@ -240,18 +276,69 @@ router.delete('/:id', authenticateToken, requireRole(['hospital', 'admin']), asy
       return res.status(404).json({ success: false, message: 'Batch not found.' });
     }
 
+    const batch = existing[0];
     if (req.user.role === 'hospital') {
       const facs = await query('SELECT id FROM facilities WHERE user_id = ?', [req.user.id]);
-      if (facs.length === 0 || facs[0].id !== existing[0].facility_id) {
+      if (facs.length === 0 || facs[0].id !== batch.facility_id) {
         return res.status(403).json({ success: false, message: 'Access denied.' });
       }
     }
 
+    // Record Disposal Transaction
+    await query(
+      `INSERT INTO inventory_transactions 
+        (inventory_id, facility_id, transaction_type, units, previous_units, new_units, reason, performed_by_user_id)
+       VALUES (?, ?, 'DISPOSAL', ?, ?, 0, 'Batch removed / discarded from inventory', ?)`,
+      [id, batch.facility_id, batch.units, batch.units, req.user.id]
+    );
+
     await query('DELETE FROM blood_inventory WHERE id = ?', [id]);
+
+    await query(
+      'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)',
+      [req.user.id, 'INVENTORY_DISPOSED', 'blood_inventory', id, `Discarded batch ${batch.batch_number} (${batch.units} units)`]
+    );
 
     res.json({ success: true, message: 'Inventory batch removed.' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete inventory.' });
+  }
+});
+
+// GET /api/inventory/transactions - Transaction ledger
+router.get('/transactions', authenticateToken, requireRole(['hospital', 'admin']), async (req, res) => {
+  try {
+    let sql = `
+      SELECT 
+        it.*,
+        f.name as facility_name,
+        bi.batch_number,
+        bi.blood_group,
+        bi.component_type,
+        u.email as performed_by_email
+      FROM inventory_transactions it
+      JOIN facilities f ON it.facility_id = f.id
+      LEFT JOIN blood_inventory bi ON it.inventory_id = bi.id
+      LEFT JOIN users u ON it.performed_by_user_id = u.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (req.user.role === 'hospital') {
+      const facs = await query('SELECT id FROM facilities WHERE user_id = ?', [req.user.id]);
+      if (facs.length > 0) {
+        sql += ' AND it.facility_id = ?';
+        params.push(facs[0].id);
+      }
+    }
+
+    sql += ' ORDER BY it.created_at DESC LIMIT 100';
+
+    const transactions = await query(sql, params);
+    res.json({ success: true, count: transactions.length, transactions });
+  } catch (error) {
+    console.error('Transactions fetch error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch inventory transactions.' });
   }
 });
 

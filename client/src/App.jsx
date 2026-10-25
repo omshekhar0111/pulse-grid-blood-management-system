@@ -14,6 +14,7 @@ import BloodRequest from './pages/BloodRequest';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import DonorDashboard from './pages/DonorDashboard';
+import RequesterDashboard from './pages/RequesterDashboard';
 import HospitalDashboard from './pages/HospitalDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AboutUs from './pages/AboutUs';
@@ -57,6 +58,9 @@ export default function App() {
 
               {/* 8. Donor Dashboard */}
               <Route path="/donor-dashboard" element={<DonorDashboard />} />
+
+              {/* 8b. Blood Requester Dashboard */}
+              <Route path="/requester-dashboard" element={<RequesterDashboard />} />
 
               {/* 9. Hospital / Blood Bank Dashboard */}
               <Route path="/hospital-dashboard" element={<HospitalDashboard />} />

@@ -1,66 +1,103 @@
 # PULSE GRID — Blood Management System
-### B.Tech Mini Project (Course Code: BCC-351)
+### Full-Stack Healthcare Transfusion & Inventory Platform (B.Tech Mini-Project)
 
-**PULSE GRID** is a complete, modern, realistic, and responsive healthcare web application designed to connect voluntary blood donors, accredited hospital blood banks, and emergency trauma centers in one centralized ecosystem.
+**PULSE GRID** is a centralized, responsive healthcare web application designed to connect voluntary blood donors, patients requesting blood, accredited hospital blood banks, and administrative authorities in one synchronized ecosystem.
 
 ---
 
-## 🩸 Key Highlights & Features
+## 🩸 Core Highlights & Capabilities
 
-1. **Light Healthcare UI/UX**: Clean medical design in white, soft slate grey, medical red (`#e11d48`), and subtle dark navy (`#102a43`).
-2. **Interactive Google Maps**: Real-time geolocation, distance calculation in km, labeled hospital & blood bank markers, directions link, and live stock view.
-3. **Role-Based Authentication**: Dedicated flows and secure JWT authorization for:
-   - **Voluntary Donors**: Profile management, donation cooldown counter (90-day interval), availability toggle, emergency request matches, appointment scheduling.
-   - **Hospitals & Blood Banks**: Real-time inventory batch tracking (Whole Blood, PRBC, Platelets, FFP, Cryoprecipitate), expiry date warnings, request triage and atomic stock deduction upon fulfillment.
-   - **System Administrators**: National KPIs, blood distribution charts, institutional license verification, user access control, and cryptographically logged audit trail.
-4. **Blood Compatibility Clinical Guide**: Interactive RBC and Plasma compatibility matrices with clear NBTC / WHO clinical disclaimers.
-5. **Dual Database Engine**:
-   - Out-of-the-box **automatic SQLite fallback** (`pulsegrid.sqlite`) for immediate zero-friction local testing.
-   - Full **MySQL 8.x** support via `mysql2` with included `pulsegrid_schema.sql`.
-6. **One-Click Demo Switcher**: Instant login for examiners and evaluators without typing passwords!
+1. **Four Specialized User Roles & Dedicated Dashboards**:
+   - **Voluntary Blood Donor**: Profile completeness gauge, donation cooldown tracker (mandatory 90-day rest interval), real-time availability toggle, and emergency matching alerts.
+   - **Blood Requester (Patients & Attendants)**: Emergency requirement submission, live 4-step triage timeline (Pending → Under Review → Approved → Fulfilled), cancellation workflow, and assigned hospital pickup directions.
+   - **Hospital & Blood Bank Staff**: Cold-chain inventory batch tracking (Whole Blood, PRBC, Platelets, FFP, Cryoprecipitate), expiry date warnings, atomic blood unit issuance, and an immutable transaction ledger.
+   - **System Administrator**: Real-time national KPI telemetry, institutional license verification, user access governance, and a complete system audit trail.
+
+2. **Leaflet & OpenStreetMap Geospatial Discovery**:
+   - Interactive OpenStreetMap integration (100% free, no commercial API key required).
+   - Real-time geolocation with user consent handling and manual city/address fallback.
+   - Turn-by-turn routing links and live stock badges for nearby certified facilities.
+
+3. **Critical Business Rules & Transaction Integrity**:
+   - **Zero Overselling**: Prevents issuing more units than are verified and available in stock.
+   - **Strict Non-Negative Check**: Database check constraints strictly enforce `units >= 0`.
+   - **Atomic State Transitions**: Stock deduction and request fulfillment occur synchronously in a single transaction.
+   - **Duplicate-Issue Prevention**: Blocks repeated processing of already fulfilled requirement cases.
+   - **Privacy Protection**: Masks donor personal phone numbers and residential addresses from unauthorized public access.
+   - **Clinical Safety Disclaimer**: Disclaims that ABO/Rh grouping matches require laboratory crossmatching and antibody screening by qualified clinical pathologists.
+
+4. **In-App Notification Center**:
+   - Real-time unread counter badge in top navigation.
+   - Automated event triggers on request submission, status changes, approvals, low stock thresholds, and near-expiry advisories.
+   - One-click "Mark All as Read" and direct action linking.
+
+5. **Dual Database Architecture (Cloud Supabase + Local Zero-Config)**:
+   - **Supabase Cloud (PostgreSQL)**: Complete SQL migration script (`supabase_schema.sql` and `supabase/migrations/20261024_pulsegrid_init.sql`) with Row Level Security (RLS) policies, UUID primary keys, and the `issue_blood_units` stored procedure.
+   - **Embedded SQLite / MySQL Fallback**: Automatic local database initialization (`pulsegrid.sqlite`) with rich demo seed data for evaluation without cloud credentials.
 
 ---
 
 ## 🏗️ Technology Stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, React Router 6.
-- **Backend**: Node.js, Express.js REST API, JSON Web Tokens (JWT), BCrypt password hashing.
-- **Database**: MySQL 8.x (or zero-config SQLite fallback), SQL transactions for atomic inventory deductions.
-- **Maps**: Google Maps JavaScript API & Places API (`@react-google-maps/api`).
+| Layer | Technologies Used |
+| :--- | :--- |
+| **Frontend** | React 19, Vite, Tailwind CSS, Lucide React Icons |
+| **Geospatial Maps** | Leaflet, OpenStreetMap Tile Layer |
+| **Backend API** | Node.js, Express.js REST API, JSON Web Tokens (JWT), BCrypt.js |
+| **Cloud Database** | Supabase (PostgreSQL with RLS, Triggers, & Stored Procedures) |
+| **Local Database Engine**| SQLite 3 / MySQL 8.x with Transactional Driver |
+| **Deployment** | Vercel (Frontend Client) & Supabase / Node.js (Backend Services) |
 
 ---
 
-## 📂 Project Structure
+## 📂 Source Code Structure
 
 ```
 pulsegrid/
-├── client/                     # React + Vite Frontend
+├── client/                              # React 19 + Vite Frontend
+│   ├── public/                          # Static assets and icons
 │   ├── src/
-│   │   ├── components/         # Navbar, Footer, GoogleMapComponent, BloodCompatibilityModal, etc.
-│   │   ├── pages/              # 12 complete pages (Home, FindBlood, Donors, Map, Dashboards...)
-│   │   ├── context/            # AuthContext (JWT session management)
-│   │   └── utils/              # API fetch client & clinical blood matrices
-│   ├── .env                    # VITE_GOOGLE_MAPS_API_KEY & VITE_API_URL
+│   │   ├── components/                  # Navbar, Footer, LeafletMapComponent, BloodCompatibilityModal...
+│   │   ├── context/                     # AuthContext (Multi-role JWT state management)
+│   │   ├── pages/                       # 13 Complete Responsive Pages
+│   │   │   ├── Home.jsx                 # Public landing page with live telemetry & FAQs
+│   │   │   ├── FindBlood.jsx            # Multi-filter inventory search
+│   │   │   ├── DonorDirectory.jsx       # Privacy-protected donor search
+│   │   │   ├── BloodBanksMap.jsx        # OpenStreetMap geospatial discovery
+│   │   │   ├── BloodRequest.jsx         # Emergency patient requirement submission
+│   │   │   ├── DonorDashboard.jsx       # Donor dashboard with cooldown & history
+│   │   │   ├── RequesterDashboard.jsx   # Dedicated requester dashboard & live timeline
+│   │   │   ├── HospitalDashboard.jsx    # Hospital command desk & transaction ledger
+│   │   │   ├── AdminDashboard.jsx       # Governance, RLS status, & audit ledger
+│   │   │   ├── Login.jsx                # Multi-role authentication & one-click demo
+│   │   │   ├── Register.jsx             # Donor, Requester, and Hospital registration
+│   │   │   ├── AboutUs.jsx              # Mission and clinical governance
+│   │   │   └── ContactUs.jsx            # Emergency coordination desk
+│   │   ├── utils/                       # API client, blood data matrices, & Supabase client
+│   │   ├── App.jsx                      # Route definitions
+│   │   └── index.css                    # Tailwind CSS & Leaflet animations
+│   ├── .env.example                     # Example environment configuration
 │   └── package.json
-├── server/                     # Node.js + Express Backend API
-│   ├── config/                 # db.js (Dual MySQL + SQLite driver with transactions)
-│   ├── middleware/             # auth.js (JWT verify & role authorization)
-│   ├── routes/                 # auth, inventory, requests, donors, facilities, stats, admin
-│   ├── seed/                   # seedData.js (Realistic hospitals, donors, batches, requests)
-│   ├── .env                    # DB_DRIVER, JWT_SECRET, PORT, DB_HOST...
-│   └── server.js
-├── pulsegrid_schema.sql        # Standalone MySQL schema definition
-├── package.json                # Root concurrent scripts
-└── README.md
+├── server/                              # Node.js + Express Backend
+│   ├── config/                          # db.js (SQLite + MySQL relational driver)
+│   ├── middleware/                      # auth.js (JWT authentication & role guards)
+│   ├── routes/                          # auth, inventory, requests, donors, facilities, notifications, admin
+│   ├── seed/                            # seedData.js (Realistic demo hospitals, donors, batches, requests)
+│   ├── data/                            # Embedded SQLite database storage
+│   ├── test_workflows.js                # Automated testing suite for business rules
+│   └── server.js                        # Master HTTP server startup
+├── supabase/
+│   └── migrations/                      # 20261024_pulsegrid_init.sql (Full PostgreSQL DDL)
+├── supabase_schema.sql                  # Standalone Supabase schema with RLS & functions
+├── package.json                         # Root concurrent execution scripts
+└── README.md                            # Comprehensive project documentation
 ```
 
 ---
 
 ## ⚡ Quick Start (Run Locally in 2 Steps)
 
-The backend server is already pre-configured to automatically seed rich demo data into an embedded SQLite database if MySQL is not currently running, allowing instant zero-configuration testing!
-
-### Step 1: Install Dependencies (if not already installed)
+### Step 1: Install Dependencies
 ```bash
 # In the pulsegrid root directory:
 npm install
@@ -68,7 +105,7 @@ npm --prefix server install
 npm --prefix client install
 ```
 
-### Step 2: Start Both Backend & Frontend
+### Step 2: Start Both Backend & Frontend Concurrently
 ```bash
 # In the pulsegrid root directory:
 npm run dev
@@ -76,76 +113,133 @@ npm run dev
 
 - **Frontend Client**: [http://localhost:5173](http://localhost:5173)
 - **Backend API Server**: [http://localhost:5000](http://localhost:5000)
-- **API Health Check**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
+- **Health Check Endpoint**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
 
 ---
 
-## 🔑 Demo Login Accounts for Project Evaluation
+## 🧪 Running Automated Tests
 
-You can use the **Demo Switcher** in the top navigation bar or enter the following pre-seeded credentials:
+Pulse Grid includes an automated workflow test suite verifying core business rules, overselling protection, negative quantity rejection, atomic transactions, and role authorization:
 
-| Role | Email Address | Password | Description |
+```bash
+# Run tests from the root directory:
+npm test
+
+# Or directly in server directory:
+cd server && node test_workflows.js
+```
+
+**Test Verification Checklist**:
+- [x] All 8 core relational tables created in database
+- [x] User registration & profile creation for all 4 roles
+- [x] Rejection of negative inventory units
+- [x] Blood requirement submission and tracking code generation
+- [x] Prevention of issuing unavailable or insufficient stock
+- [x] Atomic stock deduction and immutable `inventory_transactions` logging
+- [x] In-app notification creation and read state updates
+- [x] Requester request cancellation workflow
+- [x] Privacy protection of donor contact details
+
+---
+
+## 🔑 Evaluator Demo Login Accounts
+
+You can click any role in the **Demo Switcher** located in the top navigation bar, or enter these pre-seeded credentials:
+
+| Role | Email Address | Password | Functionality |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@pulsegrid.org` | `password123` | Full admin dashboard, user management, audit ledger, and analytics |
-| **Hospital / Blood Bank** | `apollo@hospital.org` | `password123` | Apollo Hospital blood center dashboard, inventory batches, request fulfillment |
-| **Blood Donor** | `priya.verma@donor.org` | `password123` | O+ Voluntary Donor, availability toggle, appointment booking |
+| **System Administrator** | `admin@pulsegrid.org` | `password123` | National analytics, user access governance, facility license verification, and audit trail |
+| **Hospital / Blood Bank**| `apollo@hospital.org` | `password123` | Apollo Hospital blood center desk, inventory batch intake, issue transactions, and stock adjustments |
+| **Blood Requester** | `requester@pulsegrid.org`| `password123` | Patient Aditi Rao requirement desk, live status timeline, assigned hospital pickup info, and cancel option |
+| **Voluntary Blood Donor**| `priya.verma@donor.org` | `password123` | O+ Voluntary Donor, availability toggle, 90-day donation cooldown counter, and appointment booking |
 
 ---
 
-## 🗺️ Google Maps API Key Configuration
+## ☁️ Connecting Supabase Cloud (PostgreSQL & RLS)
 
-The Google Maps integration uses the provided key:
-```
-AIzaSyBzt79rm_ZIAD3rs_zVByCxGyg6tMa8GCQ
-```
+To deploy with Supabase backend services:
 
-Configured in `client/.env`:
-```env
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyBzt79rm_ZIAD3rs_zVByCxGyg6tMa8GCQ
-VITE_API_URL=/api
-```
-If the key has origin restrictions or is offline, the map gracefully displays verified facility coordinates, distance calculations, and directions links without throwing uncaught exceptions.
+1. **Create a Supabase Project**:
+   Sign in to [supabase.com](https://supabase.com) and create a new project.
 
----
+2. **Execute the Database Migration**:
+   In your Supabase Dashboard, open the **SQL Editor**, paste the contents of `supabase_schema.sql` (or `supabase/migrations/20261024_pulsegrid_init.sql`), and click **Run**. This will create:
+   - 8 Relational Tables (`profiles`, `donors`, `blood_banks`, `blood_inventory`, `blood_requests`, `inventory_transactions`, `notifications`, `audit_logs`).
+   - Indexes for fast querying.
+   - Row Level Security (RLS) policies enforcing role boundaries.
+   - The atomic stored procedure `issue_blood_units`.
 
-## 🗄️ MySQL Database Setup (Optional for Viva / Production)
-
-If you have MySQL or XAMPP running:
-
-1. Import `pulsegrid_schema.sql` into MySQL:
-   ```bash
-   mysql -u root -p < pulsegrid_schema.sql
-   ```
-2. Configure `server/.env`:
+3. **Configure Frontend Environment**:
+   In `client/.env`, configure your Supabase project keys:
    ```env
-   DB_DRIVER=mysql
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_USER=root
-   DB_PASSWORD=your_password
-   DB_NAME=pulsegrid_db
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   VITE_API_URL=/api
    ```
-3. Restart the backend server. The database layer will seamlessly connect to MySQL.
+   When configured, the application navigation bar will display **Supabase Connected**.
 
 ---
 
-## 📑 Required Pages Implemented
+## 🚀 Deploying on Vercel
 
-1. **Home (`/`)**: Hero section, real database KPI stats, 8 blood group live availability cards, workflow explanation, emergency request callout, Google Maps preview.
-2. **Find Blood (`/find-blood`)**: Filter by blood group, component, city, and status; batch expiry info; direct request button.
-3. **Donor Directory (`/donors`)**: Filterable directory with privacy-masked contact numbers, cooldown indicators, and emergency notification triggers.
-4. **Blood Banks Map (`/blood-banks`)**: Interactive Google Map with GPS geolocation, custom SVG pins, distance calculator, and turn-by-turn routing.
-5. **Blood Request Form (`/request-blood`)**: Clinical requirement intake, urgency triage, auto-generated tracking code (`PG-REQ-XXXXX`).
-6. **Login (`/login`)**: Role-based authentication and one-click demo access.
-7. **Register (`/register`)**: Dual tabs for Voluntary Donor and Hospital/Blood Bank enrollment.
-8. **Donor Dashboard (`/donor-dashboard`)**: Profile stats, live availability switch, donation history, urgent local matches, appointment scheduling.
-9. **Hospital Dashboard (`/hospital-dashboard`)**: Shelf-life batch management, add new inventory modal, request review & atomic fulfillment.
-10. **Admin Dashboard (`/admin`)**: National KPIs, real database distribution charts, user access controls (suspend/activate), audit ledger.
-11. **About Us (`/about`)**: Healthcare problem statement, architectural diagram, and B.Tech Mini Project BCC-351 credit.
-12. **Contact Us (`/contact`)**: 24/7 emergency dispatch numbers, contact form, and FAQ accordion.
+1. **Push Code to GitHub**:
+   Commit and push your project repository to GitHub.
+
+2. **Import to Vercel**:
+   - Go to [vercel.com](https://vercel.com) and click **Add New Project**.
+   - Select your `pulsegrid` repository.
+   - Set **Root Directory** to `client`.
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+
+3. **Add Environment Variables**:
+   In Vercel Project Settings → Environment Variables:
+   - `VITE_SUPABASE_URL`: Your Supabase Project URL
+   - `VITE_SUPABASE_ANON_KEY`: Your Supabase Anon Key
+   - `VITE_API_URL`: Your deployed backend API URL (or leave empty if using Supabase client directly)
+
+4. **Deploy**:
+   Click **Deploy**. Your Pulse Grid web application will be live with high availability!
 
 ---
 
-## ⚕️ Medical Transfusion Disclaimer
+## 🔒 Creating a Secure Administrator Account
 
-> The compatibility matrices and stock indicators provided on Pulse Grid are strictly for emergency coordination and clinical guidance. Actual transfusion compatibility, crossmatching, antibody screening, and final donor eligibility MUST always be validated by qualified pathology laboratory personnel in compliance with National Blood Transfusion Council (NBTC) regulations.
+To preserve system security, public registration prevents users from self-assigning administrator privileges. Administrators can be provisioned via one of two methods:
+
+### Method 1: Database Seed / Direct SQL
+Run the following SQL statement in your database:
+```sql
+INSERT INTO users (email, password_hash, role, status) 
+VALUES ('newadmin@pulsegrid.org', '$2a$10$hashed_password_string', 'admin', 'active');
+```
+
+### Method 2: Supabase SQL Editor
+```sql
+UPDATE public.profiles 
+SET role = 'admin' 
+WHERE email = 'your-email@example.com';
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+| Issue | Cause | Solution |
+| :--- | :--- | :--- |
+| **Port 5000 in use** | Previous background node process | Run `npx kill-port 5000` or set `PORT=5001` in `server/.env`. |
+| **Map pins not loading** | Offline / tile server delay | OpenStreetMap tiles require an internet connection. If offline, the manual search list provides full fallback. |
+| **Registration error: Email already exists** | Duplicate registration | Use a different email address or use the One-Click Demo Switcher. |
+| **Stock deduction rejected** | Insufficient units in batch | Check batch units before fulfilling. Pulse Grid strictly prevents negative stock. |
+
+---
+
+## 📜 Academic Viva & Evaluation Checklist
+
+- [x] **Working Frontend & Backend**: Complete React 19 client + Express REST server + SQLite/Supabase engines.
+- [x] **Authentication & Role Guards**: 4 roles (Donor, Requester, Hospital, Admin) with protected routes.
+- [x] **Geospatial Discovery**: Leaflet + OpenStreetMap integration with GPS consent handling.
+- [x] **Data Validation**: Strict non-negative inventory quantities, expiry date checks, and required field validation.
+- [x] **In-App Notifications**: Notification center with unread badge counter and real-time alerts.
+- [x] **Audit Ledger**: Comprehensive tracking of inventory movement and clinical triage decisions.
+- [x] **Full-Stack Documentation**: Setup guide, SQL schemas, architecture diagrams, and deployment instructions.
